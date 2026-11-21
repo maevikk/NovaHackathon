@@ -1,0 +1,453 @@
+{
+  "version": 3,
+  "name": "Фабрика процессов · VENIO-C",
+  "mode": "demo",
+  "nodes": [
+    {
+      "id": "wh",
+      "type": "warehouse",
+      "name": "Склад комплектующих",
+      "x": 24,
+      "y": 272
+    },
+    {
+      "id": "o1",
+      "type": "operation",
+      "name": "Корпус и нижняя крышка",
+      "x": 213,
+      "y": 38,
+      "cycle": 83,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o2",
+      "type": "operation",
+      "name": "Корпус и верхняя крышка",
+      "x": 440,
+      "y": 38,
+      "cycle": 66,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o3",
+      "type": "operation",
+      "name": "Сборка дросселя",
+      "x": 440,
+      "y": 173,
+      "cycle": 70,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o4",
+      "type": "operation",
+      "name": "Установка тарелки и дросселя",
+      "x": 666,
+      "y": 115,
+      "cycle": 90,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o5",
+      "type": "operation",
+      "name": "Сборка мембраны",
+      "x": 210,
+      "y": 433,
+      "cycle": 76,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o6",
+      "type": "operation",
+      "name": "Подсборка узла пилота",
+      "x": 440,
+      "y": 433,
+      "cycle": 80,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o7",
+      "type": "operation",
+      "name": "Объединение подсборок",
+      "x": 892,
+      "y": 268,
+      "cycle": 75,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o8",
+      "type": "operation",
+      "name": "Крепление элементов",
+      "x": 1090,
+      "y": 171,
+      "cycle": 85,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o9",
+      "type": "operation",
+      "name": "Финальная сборка",
+      "x": 1090,
+      "y": 366,
+      "cycle": 70,
+      "staff": 1,
+      "variation": 15,
+      "defect": 0,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "o10",
+      "type": "qc",
+      "name": "Контроль качества",
+      "x": 1290,
+      "y": 263,
+      "cycle": 45,
+      "staff": 1,
+      "variation": 12,
+      "defect": 3,
+      "availability": 100,
+      "setup": 0
+    },
+    {
+      "id": "customer",
+      "type": "customer",
+      "name": "Заказчик",
+      "x": 1491,
+      "y": 275
+    }
+  ],
+  "edges": [
+    {
+      "from": "wh",
+      "to": "o1"
+    },
+    {
+      "from": "wh",
+      "to": "o3"
+    },
+    {
+      "from": "wh",
+      "to": "o5"
+    },
+    {
+      "from": "wh",
+      "to": "o6"
+    },
+    {
+      "from": "o1",
+      "to": "o2"
+    },
+    {
+      "from": "o2",
+      "to": "o4"
+    },
+    {
+      "from": "o3",
+      "to": "o4"
+    },
+    {
+      "from": "o4",
+      "to": "o7"
+    },
+    {
+      "from": "o5",
+      "to": "o7"
+    },
+    {
+      "from": "o6",
+      "to": "o7"
+    },
+    {
+      "from": "o7",
+      "to": "o8"
+    },
+    {
+      "from": "o8",
+      "to": "o9"
+    },
+    {
+      "from": "o9",
+      "to": "o10"
+    },
+    {
+      "from": "o10",
+      "to": "customer"
+    }
+  ],
+  "settings": {
+    "target": 10,
+    "releaseUnits": 12,
+    "shiftMinutes": 20,
+    "taktSeconds": 120,
+    "productionBatch": 2,
+    "transportBatch": 2,
+    "initialStock": 2,
+    "initialFlowWip": 2,
+    "partialTransport": false,
+    "logistCount": 1,
+    "handlingSeconds": 7,
+    "speed": 1.1,
+    "returnMultiplier": 1.7,
+    "metersPerPixel": 0.02,
+    "layoutLogistics": true,
+    "seed": 2026,
+    "materialCost": 15000,
+    "salePrice": 70000,
+    "wageHour": 400,
+    "logistWageHour": 420,
+    "equipmentShift": 2000,
+    "rentShift": 1100,
+    "overheadShift": 1400
+  },
+  "createdAt": "2026-11-21",
+  "description": "Учебная фабрика; времена/цены, кроме отдельно подтверждённых, демонстрационные.",
+  "kpsc": {
+    "stage": "as_is",
+    "extras": [
+      {
+        "id": "info_plan",
+        "type": "planning",
+        "name": "Производственное задание",
+        "x": 675,
+        "y": 8,
+        "note": "Задание о запуске и объёме производства"
+      },
+      {
+        "id": "info_supplier",
+        "type": "supplier",
+        "name": "Поставщик комплектующих",
+        "x": 20,
+        "y": 8,
+        "note": "Демо-узел: канал поставок"
+      },
+      {
+        "id": "stock_a",
+        "type": "inventory",
+        "name": "Межоперационный НЗП",
+        "x": 855,
+        "y": 476,
+        "note": "Величина не измерена; визуальная отметка",
+        "stock": 0
+      }
+    ],
+    "infoLinks": [
+      {
+        "id": "i01",
+        "from": "info_plan",
+        "to": "o1"
+      },
+      {
+        "id": "i02",
+        "from": "info_plan",
+        "to": "wh"
+      },
+      {
+        "id": "i03",
+        "from": "customer",
+        "to": "info_plan"
+      }
+    ],
+    "issues": [
+      {
+        "id": "p01",
+        "nodeId": "o4",
+        "title": "Проверить балансировку операции",
+        "severity": "hypothesis",
+        "category": "Ожидание / перегрузка",
+        "note": "Гипотеза для проверки хронометражом, не подтверждённый простой"
+      },
+      {
+        "id": "p02",
+        "nodeId": "o7",
+        "title": "Проверить накопление НЗП",
+        "severity": "hypothesis",
+        "category": "Избыточные запасы",
+        "note": "Нужны фактические замеры между операциями"
+      }
+    ],
+    "meta": {
+      "o1": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o2": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o3": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o4": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o5": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o6": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o7": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o8": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o9": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      },
+      "o10": {
+        "batch": 2,
+        "availableMinutes": 20,
+        "equipment": 1,
+        "workingPattern": "1 раунд — 20 минут",
+        "downtimeMinutes": 0,
+        "processCost": 0,
+        "stock": 0,
+        "addsValue": true
+      }
+    },
+    "floor": {
+      "wh": [
+        17.1,
+        3.3
+      ],
+      "o1": [
+        11.5,
+        4.6
+      ],
+      "o2": [
+        5.8,
+        1.7
+      ],
+      "o3": [
+        11.7,
+        1.7
+      ],
+      "o4": [
+        9,
+        1.8
+      ],
+      "o5": [
+        7,
+        4.6
+      ],
+      "o6": [
+        14.4,
+        1.6
+      ],
+      "o7": [
+        4.7,
+        4.6
+      ],
+      "o8": [
+        14.5,
+        4.6
+      ],
+      "o9": [
+        2.3,
+        1.7
+      ],
+      "o10": [
+        1.8,
+        4.6
+      ],
+      "customer": [
+        1.3,
+        2.8
+      ]
+    }
+  }
+}
