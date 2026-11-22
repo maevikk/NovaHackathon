@@ -54,6 +54,15 @@ def validate(model):
         by_id[nid], types[kind] = n, types[kind] + [nid]
     if len(types['source']) != 1 or len(types['customer']) != 1 or len(types['quality']) != 1 or not types['operation']:
         raise ModelError('Требуются один склад-источник, один ОТК, один заказчик и минимум одна операция')
+    # Visual positions are saved independently of the production graph.
+    # Dragging a block must never silently modify an operation or material edge.
+    layout=model.get('kpsc_layout',{})
+    if not isinstance(layout,dict):raise ModelError('kpsc_layout должен быть объектом')
+    for node_id,coords in layout.items():
+        if node_id not in by_id:raise ModelError('kpsc_layout: неизвестный узел '+str(node_id))
+        if not isinstance(coords,dict):raise ModelError('kpsc_layout: ожидается объект координат')
+        for axis in ('x','y'):
+            nonnegative(coords.get(axis),f'kpsc_layout.{node_id}.{axis}',max_value=10000)
     edge_ids = set()
     for edge in edges:
         if not isinstance(edge, dict): raise ModelError('Связь должна быть объектом')
@@ -85,8 +94,12 @@ def validate(model):
     if not all(n in from_source and n in to_customer for n in by_id):
         raise ModelError('Все узлы должны лежать на пути от склада к заказчику')
     if outgoing[qc] != [customer]: raise ModelError('ОТК должна предшествовать заказчику')
-    for k,limit in [('shift_s',86400), ('takt_s',86400),('target_units',10000),('release_units',10000),('transport_batch',100),('logists',12)]:
+    for k,limit in [('shift_s',86400),('target_units',10000),('release_units',10000),('transport_batch',100),('logists',12)]:
         positive_int(settings.get(k),f'settings.{k}',limit)
+    nonnegative(settings.get('takt_s'), 'settings.takt_s', max_value=86400)
+    if settings['takt_s']<=0:raise ModelError('settings.takt_s должно быть больше 0')
+    if abs(settings['shift_s']/settings['target_units']-settings['takt_s'])>0.00001:
+        raise ModelError('Такт должен соответствовать ФДВ/спросу: shift_s / target_units')
     if settings['release_units']<settings['target_units']:
         raise ModelError('Количество запусков не меньше плана заказчика')
     if settings.get('transport_policy') not in {'max', 'exact'}:

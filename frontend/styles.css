@@ -3,3 +3,10 @@
 @media(max-width:1250px){.metrics{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:930px){.sidebar{width:70px;padding:18px 8px}.brand{padding:0 9px 25px}.brand .brand-label,.nav-caption,.nav-item .nav-text,.nav-end{display:none}.nav-item{justify-content:center;padding:13px 8px}.nav-item .miniicon{font-size:21px}.topbar{padding:0 19px}.main{padding:24px 18px}.hero{flex-direction:column}.hero-actions{justify-content:flex-start}.topbar-status{display:none}}
 @media(max-width:620px){.sidebar{width:58px}.topbar{height:58px}.topbar-actions{gap:5px}.topbar .btn{padding:9px}.topbar .btn .hide-mobile{display:none}.main{padding:19px 12px}.metrics{gap:10px}.metric{padding:15px}.metric .number{font-size:25px}.half,.settings-grid,.fields-card .form-grid,.form-grid,.comparison{grid-template-columns:1fr}.card{padding:17px}.hero h1{font-size:26px}.bar-row{grid-template-columns:minmax(90px,1.5fr) minmax(55px,1fr) 44px;gap:7px}.source-row{grid-template-columns:30px 1fr}.source-row .badge{grid-column:2}.link-row{grid-template-columns:1fr 1fr}.link-row .btn{grid-column:1 / -1}.floor-plan{transform:scale(.88);transform-origin:top left;margin-bottom:-86px}}
+
+/* Editor accessibility / precise separation of map layout from process logic */
+#flow-space [data-node]{cursor:grab;touch-action:none;outline:none}
+#flow-space [data-node]:hover rect:first-child{filter:drop-shadow(0 3px 6px rgba(49,64,123,.18))}
+#flow-space [data-node]:focus-visible rect:first-child{stroke:#465ad8;stroke-width:3.5}
+.map-tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;font-size:11px;line-height:1.6;color:#6e7c92}
+.legend i.hyp{border-top:2px solid #d6a65a}

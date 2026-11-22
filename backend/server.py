@@ -21,7 +21,7 @@ FILES={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.c
 DIAGRAMS={'/diagrams/as_is_kpsc.svg':'as_is_kpsc.svg','/diagrams/to_be_hypothesis.svg':'to_be_hypothesis.svg'}
 
 class Handler(BaseHTTPRequestHandler):
-    server_version='ProcessLab/4'
+    server_version='ProcessLab/4.1'
     def log_message(self,format,*args):
         print('[%s] %s'%(self.log_date_time_string(),format%args))
     def response(self,status,payload):
@@ -54,7 +54,7 @@ class Handler(BaseHTTPRequestHandler):
         except (UnicodeDecodeError,json.JSONDecodeError):raise ModelError('Некорректный JSON')
     def do_GET(self):
         route=urlsplit(self.path).path
-        if route=='/api/v1/health':return self.response(200,{'status':'ok','version':'4','scope':'local_demo'})
+        if route=='/api/v1/health':return self.response(200,{'status':'ok','version':'4.1','scope':'local_demo'})
         if route=='/api/v1/session':return self.response(200,{'authenticated':self.authorized(), 'mode':'local_demo'})
         if route=='/api/v1/demo':
             if not self.authorized():return self.response(401,{'error':'unauthorized'})
@@ -132,7 +132,7 @@ def main():
     a=p.parse_args()
     if a.host not in ('127.0.0.1','localhost','::1'):
         p.error('Публичный хост запрещён: демонстрационная авторизация не предназначена для интернета')
-    print('PROCESS LAB 4: http://%s:%d/'%(a.host,a.port))
+    print('PROCESS LAB 4.1: http://%s:%d/'%(a.host,a.port))
     print('Пароль по умолчанию: demo2026 (переопределить PROCESSLAB_PASSWORD)')
     server=ThreadingHTTPServer((a.host,a.port),Handler)
     try:server.serve_forever()

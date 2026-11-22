@@ -29,12 +29,10 @@ def simulate(model):
     events=[]; counter=count(); time=0.; accepted=0; finished=0; accepted_times=[]; finished_times=[]
     deliveries=0; transported=0; active_logists=0; trip_seconds=0.; ready_customer=deque();
     events_seen=0
-    transport_queue=deque()
     completed_scrap=0
     rand=random.Random(int(s.get('seed',2026)))
     op_ids=[n for n in g['order'] if nodes[n]['kind'] in ('operation','quality')]
     last_queue_counts={n:0 for n in op_ids}
-    dispatching=False
 
     def push(t, event, **kw): heapq.heappush(events,(round(t,7),next(counter),event,kw))
 
@@ -68,13 +66,25 @@ def simulate(model):
         needed=[(parent,n) for parent in g['incoming'][n]]
         if not needed: return
         node=nodes[n]
+        # AND-join: assemble components for the SAME final product ID. A plain
+        # FIFO pop from each inbound edge could mix two products after a defect.
         while busy[n]<node['workers'] and all(delivered[e] for e in needed) and started[n]<s['release_units']:
-            inputs=[delivered[e].popleft() for e in needed]
+            common=set(token['lot'] for token in delivered[needed[0]])
+            for edge in needed[1:]:
+                common.intersection_update(token['lot'] for token in delivered[edge])
+            if not common:
+                break
+            lot=min(common)
+            inputs=[]
+            for edge in needed:
+                match=next(token for token in delivered[edge] if token['lot']==lot)
+                delivered[edge].remove(match)
+                inputs.append(match)
             birth=min(x['birth'] for x in inputs)
             waited[n]+=sum(time-x.get('delivered_at',time) for x in inputs)/len(inputs)
             busy[n]+=1;started[n]+=1; update_queue(n)
             cycle=node['cycle_s']; op_busy_s[n]+=min(cycle,max(0,horizon-time))
-            push(time+cycle,'complete',node=n,birth=birth)
+            push(time+cycle,'complete',node=n,birth=birth,lot=lot)
 
     # Customer pickup at takt intervals, including at end of shift.
     tick=s['takt_s']
@@ -99,15 +109,15 @@ def simulate(model):
                 completed_scrap+=1
             elif nid==qc:
                 finished+=1;finished_times.append(time)
-                ready_customer.append({'birth':p['birth'],'done':time})
+                ready_customer.append({'birth':p['birth'],'done':time,'lot':p['lot']})
             else:
                 for target in g['outgoing'][nid]:
-                    pending[(nid,target)].append({'birth':p['birth']})
+                    pending[(nid,target)].append({'birth':p['birth'],'lot':p['lot']})
             start_operations(nid);plan_transport()
         elif etype=='pickup':
             if ready_customer and accepted<s['target_units']:
                 token=ready_customer.popleft();accepted+=1
-                accepted_times.append({'t':time,'flow_s':time-token['birth']})
+                accepted_times.append({'t':time,'flow_s':time-token['birth'],'lot':token['lot']})
     throughput=accepted/(horizon/3600)
     bottleneck=max((n for n in op_ids if n!=qc),key=lambda n:nodes[n]['cycle_s']/nodes[n]['workers'])
     by_operation=[]
@@ -143,7 +153,8 @@ def simulate(model):
     }
     if finance['status']=='calculated':
         finance['profit']=round(finance['revenue']-finance['materials']-labor-logistics-overhead,2)
-    synthetic = model.get('status') == 'synthetic_demo'
+    venio = model.get('id')=='venio-c' and model.get('status')=='illustrative_normative_scenario'
+    synthetic = not venio
     return {
         'status':'ok','simulation_type':'deterministic_educational_scenario',
         'shift_s':horizon,'target':s['target_units'],'released':s['release_units'],
@@ -152,6 +163,7 @@ def simulate(model):
         'throughput_units_hour':round(throughput,2),
         'avg_flow_s':round(sum(x['flow_s'] for x in accepted_times)/accepted,1) if accepted else None,
         'first_accepted_s':accepted_times[0]['t'] if accepted else None,
+        'accepted_lot_ids':[row['lot'] for row in accepted_times],
         'theoretical_critical_path_s':round(max_path[customer],1),
         'critical_path_nodes':critical,
         'potential_bottleneck':{'id':bottleneck,'name':nodes[bottleneck]['name'],
@@ -163,8 +175,8 @@ def simulate(model):
         'financial':finance,
         'timeline':accepted_times,
         'warnings':[
-            'Все времена операций синтетические и не описывают реальное предприятие.' if synthetic else 'Операционные времена — нормативные суммы рабочих стандартов, НЕ фактический хронометраж.',
-            'Технологический маршрут введён как условный пример.' if synthetic else 'Технологические связи между операциями восстановлены по текстам стандартов и требуют подтверждения экспертами.',
+            'Происхождение времён пользовательской/синтетической модели не подтверждено организаторами.' if synthetic else 'Операционные времена — нормативные суммы рабочих стандартов, НЕ фактический хронометраж.',
+            'Маршруты пользовательской/синтетической модели требуют отдельного подтверждения.' if synthetic else 'Технологические связи между операциями восстановлены по текстам стандартов и требуют подтверждения экспертами.',
             'Начальные подсборки и НЗП в сценарии не заданы; комплектующие условно доступны в момент запуска.',
             'Нулевое время транспортировки и 0% дефектов — технические допущения, НЕ наблюдения на фабрике.'
               if not any(n.get('defect_pct') for n in nodes.values()) and s.get('travel_s')==0 else
