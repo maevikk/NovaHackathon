@@ -1,0 +1,24 @@
+from,to,link_type,material_or_info,confirmation,source,question
+wh,o1,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o2,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o3,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o4,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o5,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o6,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o7,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o8,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+wh,o9,supply,material,documented_supply,"Рабочий стандарт логиста, стр. 51–53",
+o1,o2,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o2,o4,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o3,o4,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o4,o7,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o5,o7,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o6,o7,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o7,o8,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o8,o9,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+o9,qc,assembly,material,requires_expert_confirmation,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",Q-01/Q-02
+qc,client,handoff,material,documented_control,"Гипотеза по последовательности подсборок из рабочих стандартов, требует сверки на ФП",
+client,planning,Потребность 10 шт./смена,information,documented_general_or_expert_check,"Общее описание, стр. 1–2",Q-01
+planning,wh,Комплектация/заявки логиста,information,documented_general_or_expert_check,"Стандарт логиста, стр. 51–53",Q-01
+planning,operators,Задание и стандарт,information,documented_general_or_expert_check,"Общее описание, стр. 1–2",Q-01
+qc,planning,"Факт, брак, отклонения",information,documented_general_or_expert_check,"Инфоцентр, стр. 10–12",Q-01

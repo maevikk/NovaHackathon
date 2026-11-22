@@ -1,0 +1,11 @@
+operation_id,operation,steps_seconds,sum_norm_seconds,source_printed_pages,source_status,fact_ct_seconds,fact_ct_status
+o1,Корпус и нижняя крышка,2+3+5+2+4+5+7+54+1,83,3. Стандарты: 33-34,documented_work_standard,,unknown_not_measured
+o2,Корпус и верхняя крышка,3+2+2+1+6+51+1,66,3. Стандарты: 35-36,documented_work_standard,,unknown_not_measured
+o3,Сборка дросселя,4+3+3+2+1,13,3. Стандарты: 37-38,documented_work_standard,,unknown_not_measured
+o4,Установка тарелки и дросселя,6+4+2+2+3+4+14+25+1,61,3. Стандарты: 39-41,documented_work_standard,,unknown_not_measured
+o5,Сборка мембраны,9+5+4+14+3,35,3. Стандарты: 42,documented_work_standard,,unknown_not_measured
+o6,Сборка пробки,19+19+1,39,3. Стандарты: 43,documented_work_standard,,unknown_not_measured
+o7,Сборка пульта управления,6+3+2+2+4+46+11+27+1,102,3. Стандарты: 44-46,documented_work_standard,,unknown_not_measured
+o8,Установка 6 болтов,170+1,171,3. Стандарты: 47,documented_work_standard,,unknown_not_measured
+o9,Штуцеры и патрубок,12+29+22+18+1,82,3. Стандарты: 48-49,documented_work_standard,,unknown_not_measured
+qc,Контроль качества,12+4+5+1,22,3. Стандарты: 50,documented_work_standard,,unknown_not_measured

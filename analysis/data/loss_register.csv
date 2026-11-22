@@ -1,0 +1,5 @@
+problem_id,location,loss_type,description,status,evidence,expected_kpi,confirmation_needed,hypothesis_id
+PR-01,РМ8,potential_overload,Норма 171 сек выше такта 120,documented_risk,Стандарт №8 стр. 47 и цель первого раунда,throughput,Хронометраж CTф и балансировка,H-01
+PR-02,Логистика,potential_transport,Требуются точные рейсы и их длительности,needs_measurement,Общее описание: партия 2; маршрут не дан,VPP/waiting,Спагетти + хронометраж,H-02
+PR-03,Межоперационные места,potential_inventory,Объём НЗП неизвестен; нельзя объявлять его высоким по этой фабрике,needs_measurement,Инфоцентр: бланки запаса,WIP/VPP,Замеры начала и конца,H-03
+PR-04,Данные,evidence_gap,Нормативы нельзя считать фактическими циклами,confirmed_data_gap,Рабочие стандарты без наблюдений,reliability,CTф и дата измерений,H-04
