@@ -55,6 +55,7 @@ function overviewView(){
  return `${header('ПРОИЗВОДСТВЕННАЯ АНАЛИТИКА',synthetic?'Универсальный конструктор потока':'Управляйте потоком, а не предположениями',`<b>${esc(m.product||m.name)}</b>. Изменяйте параметры и связи, чтобы проверить возможные ограничения процесса.`,actions)}
  ${disclaimer()}<div class="tablo">${statusBadge()}<span class="badge grey">${opCount} операций + ${qcCount} ОТК</span><span class="badge grey">Смена ${num(s.shift_s/60)} мин</span><span class="badge grey">Такт ${num(s.takt_s)} секунд</span></div>
  <section class="grid metrics">${metric('Принято заказчиком',num(accepted)+' / '+num(s.target_units),'Прогноз при принятых допущениях','primary-metric',100*(accepted??0)/s.target_units)}${metric('Потенциальное узкое место',b?num(b.cycle_s)+' с':'—',b?esc(b.name):'Нужно рассчитать','warn',b?100*b.cycle_s/(s.takt_s*2):0)}${metric('Теоретический путь',short(r?.theoretical_critical_path_s),'Без ожиданий и логистики — не фактический ВПП','',r?.theoretical_critical_path_s?50:0)}${metric('Расчётная выработка',num(r?.throughput_units_hour,1)+' шт/ч','Не фактический выпуск производства','',r?.throughput_units_hour?Math.min(100,r.throughput_units_hour/30*100):0)}</section>
+ <div class="note" style="margin:12px 0 16px"><b>Откуда «${num(accepted)} из ${num(s.target_units)}»?</b> Это расчёт симулятора, а не измеренный выпуск фабрики. За ${num(s.shift_s/60,1)} мин прошли ОТК <b>${num(r?.finished)} шт.</b>, по графику приёмки клиент получил <b>${num(accepted)} шт.</b>, а <b>${num(Math.max(0,(r?.finished??0)-(accepted??0)))} шт.</b> ещё ожидали следующего момента приёмки. Остальные запущенные комплекты на конец расчёта не завершили ОТК или выбыли в условном сценарии. По умолчанию брак равен 0% только как допущение. Для проверки измените параметры на вкладке «Параметры» и сравните сценарии — это не фактический отчёт о выпуске.</div>
  <div class="grid cols"><div>${panel('Баланс операций',synthetic?'Все времена синтетические, а не нормативные':'Секунды на единицу по рабочим стандартам; красным — выше такта',operationRows(r),btn('Все параметры','goto-parameters','small'))}<div class="callout"><div class="icon">!</div><div>${bottleneckNote}</div></div></div><div>${panel('Как устроен расчёт','От источников до управленческого решения',`<ol class="list-clean">${['Изучить нормативы и фактические замеры','Зафиксировать материальный и информационный потоки','Заполнить недостающие параметры','Найти потенциальное ограничение','Сравнить AS-IS и TO-BE как сценарии'].map((x,i)=>`<li><span class="pill-step">${i+1}</span>${x}</li>`).join('')}</ol>`)}<div style="height:16px"></div>${panel('Статус данных','Не скрываем неизвестные показатели',evidence)}</div></div>`;
 }
 function graphGeometry(model,layoutOverride=null){
@@ -105,7 +106,7 @@ function mapView(){
  const current=stage==='current',shown=current?state.baseline:state.model;
  const selector=`<select class="search-field" style="width:190px" id="stage-select"><option value="current" ${stage==='current'?'selected':''}>AS-IS · текущая</option><option value="ideal" ${stage==='ideal'?'selected':''}>IDEAL · идеальная</option><option value="target" ${stage==='target'?'selected':''}>TO-BE · целевая</option></select>`;
  if(stage==='ideal')return `${header('МУ-17-2023 · ИДЕАЛЬНЫЙ ПОТОК','Идеальное состояние ещё не рассчитано','Методика требует прогнозов, исходной КПСЦ, выявления потерь и обоснованных целевых KPI.',btn('Вопросы и источники','goto-sources','primary'))}${disclaimer()}${panel('IDEAL · обязательное методическое разграничение','Это не та же карта, что исходная КПСЦ',`<div class="section-row">${selector}</div><div class="empty">Полноценная идеальная карта пока не может быть достоверно составлена: нет фактических CT, НЗП, транспортировок и измеренного ВПП. Она должна быть построена после обследования, а не заполнена придуманными «идеальными» цифрами.</div><p class="desc" style="margin-top:18px">Промежуточный результат: отдельный документ <b>analysis/03_ideal_target_and_kpsc.md</b> фиксирует критерии идеального состояния и перечень недостающих измерений.</p>`)}`;
- return `${header('МУ-17-2023 · КАРТИРОВАНИЕ','Карта потока создания ценности',state.model.status==='synthetic_demo'?'Изображён синтетический маршрут. Вы можете добавить собственные операции и связи; это не карта обследованного предприятия.':'Разделяем материальные объекты и управление информацией. Технологические связи требуют экспертного подтверждения.',(current?btn('Перейти к TO-BE','goto-target','primary'):btn('＋ Добавить операцию','add-operation','')+btn('↳ Добавить связь','add-edge','')+btn('⊖ Удалить связь','remove-edge','')+btn('▶ Симуляция','run','primary')))}${disclaimer()}<div class="card"><div class="section-row"><div><h2 class="card-title">КПСЦ · ${stage==='current'?'AS-IS · исходная модель (базис)':stage==='ideal'?'идеальное состояние (концепция)':'TO-BE · редактируемая гипотеза'}</h2><p class="card-sub">Предмет: ${esc(shown.product||shown.name)}</p></div><select class="search-field" style="width:190px" id="stage-select"><option value="current" ${stage==='current'?'selected':''}>AS-IS · текущая</option><option value="ideal" ${stage==='ideal'?'selected':''}>IDEAL · идеальная</option><option value="target" ${stage==='target'?'selected':''}>TO-BE · целевая</option></select></div>${stage!=='current'?`<div class="note" style="margin-bottom:13px"><b>Статус: гипотеза, а не подтверждённая карта.</b> В МУ-17 идеальная и целевая карты требуют отдельных решений, проверки реализуемости и расчётов. Здесь показан вариант графа с текущими сценарными параметрами; окончательное картирование — после замеров и экспертного согласования.</div>`:''}<div class="info-strip"><strong>Информационный поток (не производственные зависимости)</strong><div class="info-chips">${(shown.info_flow||[]).map(f=>`<span>${esc(f.message)}</span>`).join('')||'<span>Не задан</span>'}</div></div><div class="map-tools"><span>Перетаскивайте блоки мышью или пальцем. Стрелки клавиатуры тоже работают. Меняется только внешний вид карты, не маршрут и не расчёт.</span>${btn('↺ Авторасположение','reset-layout','small')}</div><div class="workspace" id="flow-space">${graphSvg(shown)}</div><div class="legend"><span><i></i>Поток материальных объектов</span><span><i class="hyp"></i>Материальная связь: гипотеза (оранжевая сплошная)</span><span><i class="info"></i>Информационный поток</span><span>CTн — нормативное время цикла</span></div><p class="card-sub">${current?'На AS-IS показан неизменный исходный базис. Перестановка блоков на экране не меняет его.':'TO-BE отображает текущее состояние редактируемой сценарной модели; изменения сравнивайте с AS-IS во вкладке «Сценарии». '}НЗП, фактические транспортировки, простои и ВПП не нанесены количественно: замеры не предоставлены. На защите нельзя выдавать этот предварительный AS-IS за результаты обследования.</p></div><div style="height:16px"></div>${nodeInspector(shown,current)}`;
+ return `${header('МУ-17-2023 · КАРТИРОВАНИЕ','Карта потока создания ценности',state.model.status==='synthetic_demo'?'Изображён синтетический маршрут. Вы можете добавить собственные операции и связи; это не карта обследованного предприятия.':'Разделяем материальные объекты и управление информацией. Технологические связи требуют экспертного подтверждения.',(current?btn('Перейти к TO-BE','goto-target','primary'):btn('＋ Добавить операцию','add-operation','')+btn('↳ Добавить связь','add-edge','')+btn('⊖ Удалить связь','remove-edge','')+btn('▶ Симуляция','run','primary')))}${disclaimer()}<div class="card"><div class="section-row"><div><h2 class="card-title">КПСЦ · ${stage==='current'?'AS-IS · исходная модель (базис)':stage==='ideal'?'идеальное состояние (концепция)':'TO-BE · редактируемая гипотеза'}</h2><p class="card-sub">Предмет: ${esc(shown.product||shown.name)}</p></div><select class="search-field" style="width:190px" id="stage-select"><option value="current" ${stage==='current'?'selected':''}>AS-IS · текущая</option><option value="ideal" ${stage==='ideal'?'selected':''}>IDEAL · идеальная</option><option value="target" ${stage==='target'?'selected':''}>TO-BE · целевая</option></select></div>${stage!=='current'?`<div class="note" style="margin-bottom:13px"><b>Статус: гипотеза, а не подтверждённая карта.</b> В МУ-17 идеальная и целевая карты требуют отдельных решений, проверки реализуемости и расчётов. Здесь показан вариант графа с текущими сценарными параметрами; окончательное картирование — после замеров и экспертного согласования.</div>`:''}<div class="info-strip"><strong>Информационный поток (не производственные зависимости)</strong><div class="info-chips">${(shown.info_flow||[]).map(f=>`<span>${esc(f.message)}</span>`).join('')||'<span>Не задан</span>'}</div></div><div class="map-tools"><span>Перетаскивайте блоки мышью или пальцем в AS-IS и TO-BE. Меняются только координаты. Чтобы сохранить раскладку после перезагрузки, используйте «Экспорт JSON» и затем «Импорт».</span>${btn('↺ Авторасположение','reset-layout','small')}</div><div class="workspace" id="flow-space">${graphSvg(shown)}</div><div class="legend"><span><i></i>Поток материальных объектов</span><span><i class="hyp"></i>Материальная связь: гипотеза (оранжевая сплошная)</span><span><i class="info"></i>Информационный поток</span><span>CTн — нормативное время цикла</span></div><p class="card-sub">${current?'На AS-IS показан неизменный исходный базис. Перестановка блоков на экране не меняет его.':'TO-BE отображает текущее состояние редактируемой сценарной модели; изменения сравнивайте с AS-IS во вкладке «Сценарии». '}НЗП, фактические транспортировки, простои и ВПП не нанесены количественно: замеры не предоставлены. На защите нельзя выдавать этот предварительный AS-IS за результаты обследования.</p></div><div style="height:16px"></div>${nodeInspector(shown,current)}`;
 }
 function floorView(){
  if(!isVenio(state.model))return `${header('ПЛАНИРОВКА / ДРУГОЕ ПРЕДПРИЯТИЕ','План пока не загружен','Фабрика VENIO-C не используется для этого синтетического процесса.',btn('Смотреть КПСЦ','goto-map','primary'))}${disclaimer()}${panel('Планировка другого предприятия','Привязка координат к узлам — отдельный источник данных',`<div class="empty">В этой модели нет подтверждённой планировки. Для построения диаграммы спагетти загрузите схему помещений и реальные перемещения логиста. Нельзя автоматически переносить расположение столов фабрики регулятора газа на другое предприятие.</div>`)}`;
@@ -172,30 +173,46 @@ function redrawMapOnly(){
  space.innerHTML=graphSvg(state.showStage==='current'?state.baseline:state.model);
 }
 let drag=null,skipClickUntil=0,skipClickNode=null;
+// A pointer must be captured by the STABLE workspace. The SVG itself is
+// recreated while dragging, and capturing it causes intermittent lost drags.
 document.addEventListener('pointerdown',event=>{
  const group=event.target.closest?.('#flow-space svg [data-node]');
- if(!group||state.showStage!=='current'||(event.pointerType==='mouse'&&event.button!==0))return;
- const svg=group.closest('svg'),id=group.dataset.node,coords=graphGeometry(state.showStage==='current'?state.baseline:state.model,state.model.kpsc_layout||{}).positions[id];
- if(!coords)return;
- drag={id,initialX:coords.x,initialY:coords.y,startX:event.clientX,startY:event.clientY,scaleX:svg.viewBox.baseVal.width/svg.getBoundingClientRect().width,scaleY:svg.viewBox.baseVal.height/svg.getBoundingClientRect().height,moved:false,pointerId:event.pointerId};
+ if(!group||state.showStage==='ideal'||(event.pointerType==='mouse'&&event.button!==0))return;
+ const space=$('#flow-space'),svg=group.closest('svg');
+ const id=group.dataset.node,shown=state.showStage==='current'?state.baseline:state.model;
+ const coords=graphGeometry(shown,state.model.kpsc_layout||{}).positions[id];
+ const rect=svg.getBoundingClientRect();
+ if(!coords||!rect.width||!rect.height)return;
+ drag={id,initialX:coords.x,initialY:coords.y,startX:event.clientX,startY:event.clientY,
+       scaleX:svg.viewBox.baseVal.width/rect.width,scaleY:svg.viewBox.baseVal.height/rect.height,
+       moved:false,pointerId:event.pointerId,space};
+ try{space.setPointerCapture(event.pointerId);}catch(_){/* fallback: document listeners */}
 });
 document.addEventListener('pointermove',event=>{
  if(!drag||event.pointerId!==drag.pointerId)return;
- const delta={x:(event.clientX-drag.startX)*drag.scaleX,y:(event.clientY-drag.startY)*drag.scaleY};
- if(!drag.moved&&Math.hypot(delta.x,delta.y)<5)return;
- if(!drag.moved){drag.moved=true;state.selected=drag.id;}
- // Layout only: never touch the model's edges or operation parameters.
- const pos={x:Math.round(Math.max(15,Math.min(9500,drag.initialX+delta.x))),y:Math.round(Math.max(72,Math.min(9500,drag.initialY+delta.y)))};
- (state.model.kpsc_layout||(state.model.kpsc_layout={}))[drag.id]=pos;
- redrawMapOnly();
- event.preventDefault();
+ const dx=(event.clientX-drag.startX)*drag.scaleX;
+ const dy=(event.clientY-drag.startY)*drag.scaleY;
+ if(!drag.moved&&Math.hypot(dx,dy)<5)return;
+ if(!drag.moved){drag.moved=true;state.selected=drag.id;drag.space.classList.add('is-dragging');}
+ // These are presentation coordinates ONLY; never change nodes or edges.
+ const p={x:Math.round(Math.max(15,Math.min(9500,drag.initialX+dx))),
+          y:Math.round(Math.max(72,Math.min(9500,drag.initialY+dy)))};
+ (state.model.kpsc_layout||(state.model.kpsc_layout={}))[drag.id]=p;
+ redrawMapOnly();event.preventDefault();
 },{passive:false});
-document.addEventListener('pointerup',event=>{
+function finishDrag(event,cancel=false){
  if(!drag||event.pointerId!==drag.pointerId)return;
- if(drag.moved){skipClickUntil=Date.now()+350;skipClickNode=drag.id;toast('Расположение блока сохранено в модели. Технологический маршрут и расчёт не изменены.');}
- drag=null;
-});
-document.addEventListener('pointercancel',()=>{drag=null;});
+ const d=drag;drag=null;
+ d.space.classList.remove('is-dragging');
+ try{if(d.space.hasPointerCapture(d.pointerId))d.space.releasePointerCapture(d.pointerId);}catch(_){/* capture may be lost */}
+ if(cancel)return;
+ if(d.moved){
+  skipClickUntil=Date.now()+350;skipClickNode=d.id;
+  toast('Блок перемещён только на схеме. Экспортируйте JSON для сохранения после перезапуска.');
+ }else{state.selected=d.id;render();}
+}
+document.addEventListener('pointerup',event=>finishDrag(event));
+document.addEventListener('pointercancel',event=>finishDrag(event,true));
 async function compareScenario(){try{state.comparison=await api('compare',{baseline:state.baseline,scenario:state.model});state.result=state.comparison.scenario;state.dirty=false;toast('Базовый и целевой сценарии пересчитаны.');render();}catch(e){toast(e.message);}}
 function exportFile(name,obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
 function showModal(title,body,controls){const popup=document.createElement('div');popup.id='dialog';popup.style.cssText='position:fixed;inset:0;background:#111b34aa;z-index:20;display:grid;place-items:center;padding:20px';popup.innerHTML=`<div class="card" style="max-width:510px;width:100%;box-shadow:0 30px 80px #10193850"><h2>${title}</h2><div>${body}</div><div style="display:flex;gap:9px;justify-content:flex-end;margin-top:24px">${btn('Закрыть','close-dialog')}${controls||''}</div></div>`;document.body.appendChild(popup);}

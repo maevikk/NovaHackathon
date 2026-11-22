@@ -1,5 +1,10 @@
-"""Optional end-to-end browser test. Requires playwright + Chromium.
-Run: python3 tests/browser_smoke.py
+"""PROCESS LAB integration diagnostics.
+
+Default check needs only Python standard library:
+    python3 tests/browser_smoke.py
+
+Optional full browser check (only if Playwright and Chromium are installed):
+    python3 tests/browser_smoke.py --browser
 """
 import json
 import os
@@ -25,12 +30,25 @@ def serve():
     proc.terminate();raise AssertionError('server did not start')
 
 
-def run():
-    from playwright.sync_api import sync_playwright
+def run_browser():
+    # Import dynamically so VS Code does not report an unresolved optional package.
+    import importlib
+    try:
+        sync_playwright = importlib.import_module("playwright.sync_api").sync_playwright
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("Не установлен необязательный Playwright. Для полной браузерной проверки: python3 -m pip install playwright && python3 -m playwright install chromium") from exc
     proc,url=serve()
     try:
         with sync_playwright() as pw:
-            browser=pw.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            try:
+                # Default Playwright Chromium location works on macOS, Windows and Linux.
+                browser=pw.chromium.launch(headless=True)
+            except Exception as first_error:
+                # Fallback for a Linux test container with system Chromium.
+                if sys.platform.startswith('linux') and Path('/usr/bin/chromium').exists():
+                    browser=pw.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+                else:
+                    raise RuntimeError('Браузер Chromium для Playwright не найден. Выполни: python3 -m playwright install chromium') from first_error
             # Chromium here forbids navigation to HTTP by policy. Load the
             # project's exact HTML/CSS/JS inline, but forward its API calls to
             # the real local Python server through an instrumented bridge.
@@ -87,6 +105,25 @@ def run():
             assert page.evaluate('state.model.kpsc_layout===undefined')
             # AS-IS is a read-only baseline; editing lives in the TO-BE scenario.
             page.locator('[data-action="goto-target"]').first.click()
+            # Regression: v4.1 accidentally blocked dragging whenever AS-IS was not selected.
+            target_group=page.locator('#flow-space [data-node="o8"]')
+            target_group.scroll_into_view_if_needed()
+            target_box=target_group.bounding_box()
+            assert target_box, 'TO-BE node not rendered'
+            tx,ty=target_box['x']+target_box['width']/2,target_box['y']+target_box['height']/2
+            before_edges=page.evaluate('JSON.stringify(state.model.edges)')
+            page.mouse.move(tx,ty);page.mouse.down();page.mouse.move(tx+54,ty+25,steps=8);page.mouse.up()
+            moved_pos=page.evaluate('state.model.kpsc_layout?.o8')
+            assert moved_pos and moved_pos['x']>0, 'TO-BE drag was blocked'
+            assert before_edges==page.evaluate('JSON.stringify(state.model.edges)'), 'TO-BE drag modified topology'
+            # Keyboard positioning on both stages must also work.
+            page.locator('#flow-space [data-node="o8"]').focus()
+            page.keyboard.press('ArrowRight')
+            assert page.evaluate('state.model.kpsc_layout?.o8?.x')==moved_pos['x']+12
+            with page.expect_download(timeout=5000) as dl:
+                page.locator('[data-action="export"]').click()
+            downloaded=json.loads(Path(dl.value.path()).read_text('utf-8'))
+            assert downloaded['kpsc_layout']['o8']['x']==moved_pos['x']+12
             page.locator('#flow-space [data-node="o8"]').click()
             inp=page.locator('[data-node-field="cycle_s"][data-node-id="o8"]')
             inp.fill('125');inp.press('Tab')
@@ -126,15 +163,102 @@ def run():
             mobile.locator('.sidebar').wait_for(timeout=20000)
             mobile.locator('[data-view="map"]').click()
             assert mobile.locator('#flow-space svg').count()==1
+            # Touch regression on a narrow viewport (pointer capture survives SVG redraw).
+            touch_node=mobile.locator('#flow-space [data-node="o1"]')
+            touch_node.scroll_into_view_if_needed()
+            bb=touch_node.bounding_box()
+            assert bb, 'Touch node not visible'
+            x,y=bb['x']+bb['width']/2,bb['y']+bb['height']/2
+            cdp=mobile.context.new_cdp_session(mobile)
+            cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y,'id':1}]})
+            for i in range(1,7):
+                cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+8*i,'y':y+3*i,'id':1}]})
+            cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+            mobile.wait_for_function('Boolean(state.model.kpsc_layout?.o1)',timeout=3000)
             mobile.screenshot(path=str(ROOT/'docs/previews/map_mobile_verified.png'),full_page=True)
             assert not errors,errors
             assert not failed,failed
             assert not any(status>=500 for _,_,status in api_replies),api_replies
-            print(json.dumps({'browser':'Chromium','result':'PASS','desktop_drag':True,'backend_roundtrip':True,'compare':True,'generic':True,'mobile':True,'api_calls':api_replies,'errors':errors},ensure_ascii=False,indent=2))
+            print(json.dumps({'browser':'Chromium','result':'PASS','desktop_drag':True,'to_be_drag':True,'keyboard_layout':True,'backend_roundtrip':True,'compare':True,'generic':True,'mobile_touch_drag':True,'mobile':True,'api_calls':api_replies,'errors':errors},ensure_ascii=False,indent=2))
             mobile.close();browser.close()
     finally:
         proc.terminate()
         try:proc.wait(timeout=5)
         except subprocess.TimeoutExpired:proc.kill()
 
-if __name__=='__main__':run()
+def run_api_smoke():
+    """Check that HTML, JS and CSS are served and share a working backend API.
+
+    This is an HTTP integration smoke test, NOT a test of drag-and-drop.
+    No Playwright, third-party packages, or system browser are required.
+    """
+    import http.cookiejar
+    import urllib.error
+
+    proc, base_url = serve()
+    cookies = http.cookiejar.CookieJar()
+    client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
+
+    def get(path):
+        with client.open(base_url + path.lstrip('/'), timeout=8) as response:
+            return response.read().decode('utf-8'), response.status
+
+    def request(path, body):
+        payload = json.dumps(body, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(
+            base_url + 'api/v1/' + path,
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with client.open(req, timeout=8) as response:
+            return json.load(response), response.status
+
+    try:
+        html, status = get('/')
+        assert status == 200 and '/app.js' in html and '/styles.css' in html, 'HTML не подключает JS и CSS'
+        js, status = get('/app.js')
+        assert status == 200 and "async function api(" in js and "fetch('/api/v1/'" in js, 'JS не подключает API'
+        css, status = get('/styles.css')
+        assert status == 200 and len(css) > 500, 'CSS не загружается'
+        unauth, status = get('api/v1/session')
+        assert json.loads(unauth)['authenticated'] is False, 'Некорректный стартовый сеанс'
+        login, status = request('login', {'password':'demo2026'})
+        assert status == 200 and login['authenticated'], 'Не удалось войти'
+        auth, status = get('api/v1/session')
+        assert json.loads(auth)['authenticated'], 'Cookie сессии не работает'
+        demo, status = get('api/v1/demo')
+        model = json.loads(demo)
+        assert status == 200 and len(model['nodes']) >= 10, 'Сервер не отдал модель'
+        validated, status = request('validate', model)
+        assert status == 200 and validated['valid'], 'Валидация не работает'
+        simulated, status = request('simulate', model)
+        assert status == 200 and isinstance(simulated['accepted'], int), 'Движок моделирования не ответил'
+        comparison, status = request('compare', {'baseline':model,'scenario':model})
+        assert status == 200 and isinstance(comparison, dict), 'Сравнение сценариев не работает'
+        generic, status = get('api/v1/generic')
+        assert status == 200 and isinstance(json.loads(generic)['nodes'], list), 'Пример другой фабрики недоступен'
+        print('PASS: HTML + JS + CSS + login + session + модель + validate + simulate + compare + импорт другого процесса')
+        print('Frontend ↔ backend: HTTP-интеграция работает. Проверку перетаскивания выполняй в браузере либо с --browser.')
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='PROCESS LAB: проверка соединения frontend/backend')
+    parser.add_argument('--browser', action='store_true', help='Дополнительная проверка интерфейса в Chromium через Playwright')
+    options = parser.parse_args()
+    try:
+        if options.browser:
+            run_browser()
+        else:
+            run_api_smoke()
+    except Exception as exc:
+        print(f'FAIL: {exc}', file=sys.stderr)
+        sys.exit(1)
+
